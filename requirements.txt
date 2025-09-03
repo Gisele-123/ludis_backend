@@ -1,0 +1,9 @@
+Flask
+Flask-SQLAlchemy
+Flask-Migrate
+Flask-Mail
+Flask-JWT-Extended
+Flask-Cors
+python-dotenv
+itsdangerous
+email-validator
