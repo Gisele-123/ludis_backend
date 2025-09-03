@@ -272,14 +272,3 @@ Authorization: Bearer <token>
 * Email verification is required for **regular users** before login.
 
 ---
-
-```
-
----
-
-This is **ready to copy-paste** into your project.  
-
-If you want, I can **also make a “full commands section” at the top** with **setup, migration, running server, and testing APIs all in one block** so someone can literally follow step by step.  
-
-Do you want me to do that?
-```
