@@ -36,38 +36,39 @@ class Team(db.Model):
     __tablename__ = "teams"
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(80), unique=True, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    name = db.Column(db.String(100), unique=True, nullable=False)
 
     def to_dict(self):
-        return {"id": self.id, "name": self.name, "created_at": self.created_at.isoformat()}
+        return {"id": self.id, "name": self.name}
 
 class Match(db.Model):
+    __tablename__ = "matches"
+
     id = db.Column(db.Integer, primary_key=True)
-    type = db.Column(db.String(50), nullable=False, default="two_teams")  
-    # Possible values: "two_teams", "personal", "multi_team"
-    
-    home_team_id = db.Column(db.Integer, db.ForeignKey("team.id"), nullable=True)
-    away_team_id = db.Column(db.Integer, db.ForeignKey("team.id"), nullable=True)
+    type = db.Column(db.String(20), nullable=False, default="two_teams")
+    sport_type = db.Column(db.String(50), nullable=False)
+    date = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.String(20), default="scheduled")
 
-    # For personal/multi-team games, you can store participants as JSON
+    home_team_id = db.Column(db.Integer, db.ForeignKey("teams.id"), nullable=True)
+    away_team_id = db.Column(db.Integer, db.ForeignKey("teams.id"), nullable=True)
+
+    home_score = db.Column(db.Integer, nullable=True)
+    away_score = db.Column(db.Integer, nullable=True)
+
+    # for personal or multi-team matches
     participants = db.Column(db.JSON, nullable=True)
-
-    date = db.Column(db.DateTime, nullable=False)
-    status = db.Column(db.String(20), default="scheduled")  # scheduled/live/finished
-    home_score = db.Column(db.Integer, default=0)
-    away_score = db.Column(db.Integer, default=0)
 
     def to_dict(self):
         return {
             "id": self.id,
             "type": self.type,
+            "sport_type": self.sport_type,
+            "date": self.date.isoformat() if self.date else None,
+            "status": self.status,
             "home_team_id": self.home_team_id,
             "away_team_id": self.away_team_id,
-            "participants": self.participants,
-            "date": self.date.isoformat(),
-            "status": self.status,
             "home_score": self.home_score,
-            "away_score": self.away_score
+            "away_score": self.away_score,
+            "participants": self.participants,
         }
-

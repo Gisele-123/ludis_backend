@@ -23,18 +23,17 @@ def create_team():
     return jsonify({"team": team.to_dict()}), 201
     pass
 
-@matches_bp.get("/teams")
-def list_teams():
-    teams = Team.query.all()
-    return jsonify([t.to_dict() for t in teams]), 200
-
 @matches_bp.post("/matches")
 @admin_required
 def create_match():
     data = request.json
-    match_type = data.get("type", "two_teams")  # default two-team match
+    match_type = data.get("type", "two_teams")
+    sport_type = data.get("sport_type")  # required now
     date = data.get("date")
-    
+
+    if not sport_type:
+        return jsonify({"message": "sport_type is required"}), 400
+
     if match_type not in ["two_teams", "personal", "multi_team"]:
         return jsonify({"message": "Invalid match type"}), 400
 
@@ -45,17 +44,18 @@ def create_match():
             return jsonify({"message": "Two-team match must have home_team_id and away_team_id"}), 400
         match = Match(
             type="two_teams",
+            sport_type=sport_type,
             home_team_id=home_team_id,
             away_team_id=away_team_id,
             date=date
         )
-
     else:
         participants = data.get("participants")
         if not participants or not isinstance(participants, list):
             return jsonify({"message": "Personal or multi_team match must have participants list"}), 400
         match = Match(
             type=match_type,
+            sport_type=sport_type,
             participants=participants,
             date=date
         )
