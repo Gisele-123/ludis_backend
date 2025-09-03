@@ -31,24 +31,38 @@ def list_teams():
 @matches_bp.post("/matches")
 @admin_required
 def create_match():
-    data = request.get_json()
-    try:
-        home_team_id = int(data["home_team_id"])
-        away_team_id = int(data["away_team_id"])
-        date = datetime.fromisoformat(data["date"])
-    except (KeyError, ValueError):
-        return jsonify({"message": "Invalid data"}), 400
+    data = request.json
+    match_type = data.get("type", "two_teams")  # default two-team match
+    date = data.get("date")
+    
+    if match_type not in ["two_teams", "personal", "multi_team"]:
+        return jsonify({"message": "Invalid match type"}), 400
 
-    match = Match(home_team_id=home_team_id, away_team_id=away_team_id, date=date)
+    if match_type == "two_teams":
+        home_team_id = data.get("home_team_id")
+        away_team_id = data.get("away_team_id")
+        if not home_team_id or not away_team_id:
+            return jsonify({"message": "Two-team match must have home_team_id and away_team_id"}), 400
+        match = Match(
+            type="two_teams",
+            home_team_id=home_team_id,
+            away_team_id=away_team_id,
+            date=date
+        )
+
+    else:
+        participants = data.get("participants")
+        if not participants or not isinstance(participants, list):
+            return jsonify({"message": "Personal or multi_team match must have participants list"}), 400
+        match = Match(
+            type=match_type,
+            participants=participants,
+            date=date
+        )
+
     db.session.add(match)
     db.session.commit()
-    return jsonify({"match": match.to_dict()}), 201
-    pass
-
-@matches_bp.get("/matches")
-def list_matches():
-    matches = Match.query.order_by(Match.date.desc()).all()
-    return jsonify([m.to_dict() for m in matches]), 200
+    return jsonify(match.to_dict()), 201
 
 @matches_bp.patch("/matches/<int:match_id>/score")
 @admin_required
@@ -57,13 +71,23 @@ def update_score(match_id):
     if not match:
         return jsonify({"message": "Match not found"}), 404
 
-    data = request.get_json()
-    match.home_score = data.get("home_score", match.home_score)
-    match.away_score = data.get("away_score", match.away_score)
+    data = request.json
+
+    if match.type == "two_teams":
+        match.home_score = data.get("home_score", match.home_score)
+        match.away_score = data.get("away_score", match.away_score)
+    else:
+        # Personal or multi-team scores stored in JSON: {"player1": 10, "player2": 8}
+        scores = data.get("scores")
+        if not scores or not isinstance(scores, dict):
+            return jsonify({"message": "Scores must be provided as a JSON object"}), 400
+        match.home_score = None
+        match.away_score = None
+        match.participants = [{"name": p, "score": s} for p, s in scores.items()]
+
     match.status = data.get("status", match.status)
     db.session.commit()
-    return jsonify({"match": match.to_dict()}), 200
-    pass
+    return jsonify(match.to_dict()), 200
 
 @matches_bp.get("/teams")
 def list_teams():

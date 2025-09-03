@@ -43,28 +43,31 @@ class Team(db.Model):
         return {"id": self.id, "name": self.name, "created_at": self.created_at.isoformat()}
 
 class Match(db.Model):
-    __tablename__ = "matches"
-
     id = db.Column(db.Integer, primary_key=True)
-    home_team_id = db.Column(db.Integer, db.ForeignKey("teams.id"), nullable=False)
-    away_team_id = db.Column(db.Integer, db.ForeignKey("teams.id"), nullable=False)
-    home_score = db.Column(db.Integer, default=0, nullable=False)
-    away_score = db.Column(db.Integer, default=0, nullable=False)
-    date = db.Column(db.DateTime, nullable=False)
-    status = db.Column(db.String(50), default="scheduled")  # scheduled, live, finished
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    type = db.Column(db.String(50), nullable=False, default="two_teams")  
+    # Possible values: "two_teams", "personal", "multi_team"
+    
+    home_team_id = db.Column(db.Integer, db.ForeignKey("team.id"), nullable=True)
+    away_team_id = db.Column(db.Integer, db.ForeignKey("team.id"), nullable=True)
 
-    home_team = db.relationship("Team", foreign_keys=[home_team_id])
-    away_team = db.relationship("Team", foreign_keys=[away_team_id])
+    # For personal/multi-team games, you can store participants as JSON
+    participants = db.Column(db.JSON, nullable=True)
+
+    date = db.Column(db.DateTime, nullable=False)
+    status = db.Column(db.String(20), default="scheduled")  # scheduled/live/finished
+    home_score = db.Column(db.Integer, default=0)
+    away_score = db.Column(db.Integer, default=0)
 
     def to_dict(self):
         return {
             "id": self.id,
-            "home_team": self.home_team.to_dict(),
-            "away_team": self.away_team.to_dict(),
-            "home_score": self.home_score,
-            "away_score": self.away_score,
+            "type": self.type,
+            "home_team_id": self.home_team_id,
+            "away_team_id": self.away_team_id,
+            "participants": self.participants,
             "date": self.date.isoformat(),
             "status": self.status,
-            "created_at": self.created_at.isoformat(),
+            "home_score": self.home_score,
+            "away_score": self.away_score
         }
+
